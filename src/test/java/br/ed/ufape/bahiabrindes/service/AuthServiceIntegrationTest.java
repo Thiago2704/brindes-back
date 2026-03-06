@@ -43,12 +43,12 @@ class AuthServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Limpar apenas funcionários (perfis são criados pelo Liquibase)
         funcionarioRepository.deleteAll();
+        perfilRepository.deleteAll();
 
-        // Buscar perfil ADMIN criado pelo Liquibase
-        perfilAdmin = perfilRepository.findByNome("ADMIN")
-            .orElseThrow(() -> new RuntimeException("Perfil ADMIN não encontrado"));
+        perfilAdmin = new Perfil();
+        perfilAdmin.setNome("ADMIN");
+        perfilAdmin = perfilRepository.save(perfilAdmin);
 
         // Criar funcionário de teste
         Set<Perfil> perfis = new HashSet<>();
@@ -139,8 +139,9 @@ class AuthServiceIntegrationTest {
     @DisplayName("Deve incluir múltiplos perfis no token")
     void deveIncluirMultiplosPerfilsNoToken() {
         // Arrange
-        Perfil perfilGerente = perfilRepository.findByNome("GERENTE")
-            .orElseThrow(() -> new RuntimeException("Perfil GERENTE não encontrado"));
+        Perfil perfilGerente = new Perfil();
+        perfilGerente.setNome("GERENTE");
+        perfilGerente = perfilRepository.save(perfilGerente);
 
         funcionarioTeste.getPerfis().add(perfilGerente);
         funcionarioRepository.save(funcionarioTeste);

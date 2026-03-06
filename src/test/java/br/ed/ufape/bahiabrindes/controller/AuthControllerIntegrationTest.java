@@ -50,12 +50,12 @@ class AuthControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Limpar apenas funcionários (perfis são criados pelo Liquibase)
         funcionarioRepository.deleteAll();
+        perfilRepository.deleteAll();
 
-        // Buscar perfil ADMIN criado pelo Liquibase
-        Perfil perfilAdmin = perfilRepository.findByNome("ADMIN")
-            .orElseThrow(() -> new RuntimeException("Perfil ADMIN não encontrado"));
+        Perfil perfilAdmin = new Perfil();
+        perfilAdmin.setNome("ADMIN");
+        perfilAdmin = perfilRepository.save(perfilAdmin);
 
         // Criar funcionário de teste
         Set<Perfil> perfis = new HashSet<>();

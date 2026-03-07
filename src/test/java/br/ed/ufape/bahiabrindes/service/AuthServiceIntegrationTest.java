@@ -2,8 +2,11 @@ package br.ed.ufape.bahiabrindes.service;
 
 import br.ed.ufape.bahiabrindes.dto.auth.LoginRequest;
 import br.ed.ufape.bahiabrindes.dto.auth.LoginResponse;
+import br.ed.ufape.bahiabrindes.model.entity.Cliente;
 import br.ed.ufape.bahiabrindes.model.entity.Funcionario;
 import br.ed.ufape.bahiabrindes.model.entity.Perfil;
+import br.ed.ufape.bahiabrindes.model.enums.TipoUsuario;
+import br.ed.ufape.bahiabrindes.repository.ClienteRepository;
 import br.ed.ufape.bahiabrindes.repository.FuncionarioRepository;
 import br.ed.ufape.bahiabrindes.repository.PerfilRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,16 +36,21 @@ class AuthServiceIntegrationTest {
     private FuncionarioRepository funcionarioRepository;
 
     @Autowired
+    private ClienteRepository clienteRepository;
+
+    @Autowired
     private PerfilRepository perfilRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     private Funcionario funcionarioTeste;
+    private Cliente clienteTeste;
     private Perfil perfilAdmin;
 
     @BeforeEach
     void setUp() {
+        clienteRepository.deleteAll();
         funcionarioRepository.deleteAll();
         perfilRepository.deleteAll();
 
@@ -61,6 +69,13 @@ class AuthServiceIntegrationTest {
         funcionarioTeste.setAtivo(true);
         funcionarioTeste.setPerfis(perfis);
         funcionarioTeste = funcionarioRepository.save(funcionarioTeste);
+
+        clienteTeste = new Cliente();
+        clienteTeste.setNome("Cliente Teste");
+        clienteTeste.setEmail("cliente@bahiabrindes.com");
+        clienteTeste.setSenha(passwordEncoder.encode("senha123"));
+        clienteTeste.setAtivo(true);
+        clienteTeste = clienteRepository.save(clienteTeste);
     }
 
     @Test
@@ -81,7 +96,26 @@ class AuthServiceIntegrationTest {
         assertEquals(funcionarioTeste.getId(), response.getId());
         assertEquals("Usuário Teste", response.getNome());
         assertEquals("teste@bahiabrindes.com", response.getEmail());
+        assertEquals(TipoUsuario.FUNCIONARIO, response.getTipoUsuario());
         assertTrue(response.getPerfis().contains("ADMIN"));
+    }
+
+    @Test
+    @DisplayName("Deve realizar login de cliente com sucesso usando banco H2")
+    void deveRealizarLoginDeClienteComSucessoComBancoReal() {
+        // Arrange
+        LoginRequest request = new LoginRequest();
+        request.setEmail("cliente@bahiabrindes.com");
+        request.setSenha("senha123");
+
+        // Act
+        LoginResponse response = authService.login(request);
+
+        // Assert
+        assertNotNull(response);
+        assertNotNull(response.getToken());
+        assertEquals(TipoUsuario.CLIENTE, response.getTipoUsuario());
+        assertTrue(response.getPerfis().contains("CLIENTE"));
     }
 
     @Test
@@ -133,6 +167,25 @@ class AuthServiceIntegrationTest {
                 () -> authService.login(request)
         );
         assertEquals("Email ou senha inválidos", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Deve bloquear login quando email existir nas duas tabelas")
+    void deveBloquearLoginQuandoEmailExistirNasDuasTabelas() {
+        // Arrange
+        clienteTeste.setEmail("teste@bahiabrindes.com");
+        clienteRepository.save(clienteTeste);
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("teste@bahiabrindes.com");
+        request.setSenha("senha123");
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> authService.login(request)
+        );
+        assertEquals("Email cadastrado para multiplos tipos de usuario", exception.getMessage());
     }
 
     @Test

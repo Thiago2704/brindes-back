@@ -77,6 +77,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/clientes").permitAll()
                 .requestMatchers("/api/clientes/me/**").hasRole("CLIENTE")
                 .requestMatchers("/api/clientes/**").hasRole("FUNCIONARIO")
+                .requestMatchers("/api/orcamentos/admin/**").hasRole("FUNCIONARIO")
+                .requestMatchers(HttpMethod.PATCH, "/api/orcamentos/*/status").hasRole("FUNCIONARIO")
+                .requestMatchers("/api/orcamentos/meus/**").hasRole("CLIENTE")
+                .requestMatchers(HttpMethod.POST, "/api/orcamentos").hasRole("CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/api/produtos", "/api/produtos/**").permitAll()
                 .requestMatchers("/api/produtos/**").hasRole("FUNCIONARIO")
                 .requestMatchers("/api/estoque/**").hasRole("FUNCIONARIO")
                 .requestMatchers(

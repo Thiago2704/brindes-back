@@ -32,4 +32,7 @@ public class ProdutoResponseDTO {
 
     @Builder.Default
     private List<ItemFichaTecnicaResponseDTO> itensFichaTecnica = new ArrayList<>();
+
+    @Builder.Default
+    private List<ProdutoImagemResponse> imagens = new ArrayList<>();
 }

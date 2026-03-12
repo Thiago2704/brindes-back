@@ -20,4 +20,5 @@ public class ClienteResponse {
     private String endereco;
     private String segmentacao;
     private LocalDateTime criadoEm;
+    private String fotoPerfil;
 }

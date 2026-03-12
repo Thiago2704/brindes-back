@@ -112,6 +112,9 @@ public class ClienteService {
         if (request.getSenha() != null && !request.getSenha().trim().isEmpty()) {
             cliente.setSenha(passwordEncoder.encode(request.getSenha()));
         }
+        if (request.getFotoPerfil() != null) {
+            cliente.setFotoPerfil(request.getFotoPerfil().isBlank() ? null : request.getFotoPerfil());
+        }
 
         Cliente clienteAtualizado = clienteRepository.save(cliente);
 
@@ -148,6 +151,7 @@ public class ClienteService {
                 .endereco(c.getEndereco())
                 .segmentacao(c.getSegmentacao())
                 .criadoEm(c.getCriadoEm())
+                .fotoPerfil(c.getFotoPerfil())
                 .build();
     }
 

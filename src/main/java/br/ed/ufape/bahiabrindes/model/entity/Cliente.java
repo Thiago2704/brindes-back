@@ -44,4 +44,8 @@ public class Cliente {
     @Column(nullable = false)
     @Builder.Default
     private Boolean ativo = true;
+
+    /** Foto de perfil em Base64 (ex: "data:image/jpeg;base64,...") */
+    @Column(name = "foto_perfil", columnDefinition = "TEXT")
+    private String fotoPerfil;
 }

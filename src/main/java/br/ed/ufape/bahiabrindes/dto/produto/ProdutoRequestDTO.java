@@ -1,8 +1,11 @@
 package br.ed.ufape.bahiabrindes.dto.produto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -47,4 +50,10 @@ public class ProdutoRequestDTO {
 
     @Builder.Default
     private List<ItemFichaTecnicaRequestDTO> itensFichaTecnica = new ArrayList<>();
+
+    @Valid
+    @NotEmpty(message = "É obrigatório informar ao menos uma imagem")
+    @Size(max = 4, message = "O produto pode ter no máximo 4 imagens")
+    @Builder.Default
+    private List<ProdutoImagemRequest> imagens = new ArrayList<>();
 }

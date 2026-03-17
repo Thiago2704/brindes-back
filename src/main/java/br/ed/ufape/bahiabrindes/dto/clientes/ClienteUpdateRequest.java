@@ -28,4 +28,5 @@ public class ClienteUpdateRequest {
 
     private String endereco;
     private String segmentacao;
+    private String fotoPerfil;
 }

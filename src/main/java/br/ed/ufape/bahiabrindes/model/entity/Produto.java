@@ -65,4 +65,8 @@ public class Produto {
     @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<MateriaPrimaProduto> itensFichaTecnica = new ArrayList<>();
+
+    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ProdutoImagem> imagens = new ArrayList<>();
 }

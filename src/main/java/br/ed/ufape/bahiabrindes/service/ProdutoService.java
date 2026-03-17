@@ -3,12 +3,15 @@ package br.ed.ufape.bahiabrindes.service;
 import br.ed.ufape.bahiabrindes.dto.common.PageResponse;
 import br.ed.ufape.bahiabrindes.dto.produto.ItemFichaTecnicaRequestDTO;
 import br.ed.ufape.bahiabrindes.dto.produto.ItemFichaTecnicaResponseDTO;
+import br.ed.ufape.bahiabrindes.dto.produto.ProdutoImagemRequest;
+import br.ed.ufape.bahiabrindes.dto.produto.ProdutoImagemResponse;
 import br.ed.ufape.bahiabrindes.dto.produto.ProdutoRequestDTO;
 import br.ed.ufape.bahiabrindes.dto.produto.ProdutoResponseDTO;
 import br.ed.ufape.bahiabrindes.model.entity.Categoria;
 import br.ed.ufape.bahiabrindes.model.entity.MateriaPrima;
 import br.ed.ufape.bahiabrindes.model.entity.MateriaPrimaProduto;
 import br.ed.ufape.bahiabrindes.model.entity.Produto;
+import br.ed.ufape.bahiabrindes.model.entity.ProdutoImagem;
 import br.ed.ufape.bahiabrindes.repository.MateriaPrimaRepository;
 import br.ed.ufape.bahiabrindes.repository.ProdutoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +79,7 @@ public class ProdutoService {
                 .build();
 
         syncFichaTecnica(produto, request.getItensFichaTecnica());
+        syncImagens(produto, request.getImagens());
 
         return toResponse(produtoRepository.save(produto));
     }
@@ -98,6 +102,7 @@ public class ProdutoService {
         produto.setObservacoes(request.getObservacoes());
 
         syncFichaTecnica(produto, request.getItensFichaTecnica());
+        syncImagens(produto, request.getImagens());
 
         return toResponse(produtoRepository.save(produto));
     }
@@ -110,6 +115,23 @@ public class ProdutoService {
     }
 
     // ── Helpers ──────────────────────────────────────────────
+
+    private void syncImagens(Produto produto, List<ProdutoImagemRequest> imagensRequest) {
+        if (imagensRequest == null) return;
+
+        produto.getImagens().clear();
+
+        int ordem = 1;
+        for (ProdutoImagemRequest req : imagensRequest) {
+            ProdutoImagem imagem = ProdutoImagem.builder()
+                    .produto(produto)
+                    .url(req.getUrl().trim())
+                    .ordem(req.getOrdem() != null ? req.getOrdem() : ordem)
+                    .build();
+            produto.getImagens().add(imagem);
+            ordem++;
+        }
+    }
 
     private void syncFichaTecnica(Produto produto, List<ItemFichaTecnicaRequestDTO> itensRequest) {
         if (itensRequest == null)
@@ -143,6 +165,17 @@ public class ProdutoService {
                 ? produto.getItensFichaTecnica().stream().map(this::toItemResponse).toList()
                 : List.of();
 
+        List<ProdutoImagemResponse> imagens = produto.getImagens() != null
+                ? produto.getImagens().stream()
+                        .sorted(java.util.Comparator.comparingInt(ProdutoImagem::getOrdem))
+                        .map(img -> ProdutoImagemResponse.builder()
+                                .id(img.getId())
+                                .url(img.getUrl())
+                                .ordem(img.getOrdem())
+                                .build())
+                        .toList()
+                : List.of();
+
         return ProdutoResponseDTO.builder()
                 .id(produto.getId())
                 .nome(produto.getNome())
@@ -159,6 +192,7 @@ public class ProdutoService {
                 .prazoProducao(produto.getPrazoProducao())
                 .observacoes(produto.getObservacoes())
                 .itensFichaTecnica(itens)
+                .imagens(imagens)
                 .build();
     }
 

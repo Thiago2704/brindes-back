@@ -1,10 +1,14 @@
 package br.ed.ufape.bahiabrindes.config;
 
-import org.springframework.beans.factory.ObjectProvider;
+import br.ed.ufape.bahiabrindes.security.JwtAuthenticationFilter;
+
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,20 +19,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.Arrays;
-
-import br.ed.ufape.bahiabrindes.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
-    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
-    private ObjectProvider<JwtAuthenticationFilter> jwtAuthenticationFilterProvider;
-
+    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -68,38 +70,37 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .securityContext(context -> context.requireExplicitSave(false))
             .authorizeHttpRequests(auth -> auth
+
+                // PUBLICO
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/clientes").permitAll()
-                .requestMatchers("/api/clientes/me/**").hasRole("CLIENTE")
-                .requestMatchers("/api/clientes/**").hasRole("FUNCIONARIO")
-                .requestMatchers("/api/orcamentos/admin/**").hasRole("FUNCIONARIO")
-                .requestMatchers(HttpMethod.PATCH, "/api/orcamentos/*/status").hasRole("FUNCIONARIO")
-                .requestMatchers("/api/orcamentos/meus/**").hasRole("CLIENTE")
-                .requestMatchers(HttpMethod.POST, "/api/orcamentos").hasRole("CLIENTE")
                 .requestMatchers(HttpMethod.GET, "/api/produtos", "/api/produtos/**").permitAll()
-                .requestMatchers("/api/produtos/**").hasRole("FUNCIONARIO")
-                .requestMatchers("/api/estoque/**").hasRole("FUNCIONARIO")
-                .requestMatchers(
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/v3/api-docs/**",
-                        "/v3/api-docs.yaml"
-                ).permitAll()
+
+                // CLIENTE
+                .requestMatchers("/api/clientes/me/**").hasRole("CLIENTE")
+
+                // FUNCIONARIO + ADMIN
+                .requestMatchers("/api/clientes/**").hasAnyRole("FUNCIONARIO", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/funcionarios").hasRole("ADMIN")
+                .requestMatchers("/api/orcamentos/admin/**").hasAnyRole("FUNCIONARIO", "ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/orcamentos/*/status").hasAnyRole("FUNCIONARIO", "ADMIN")
+                .requestMatchers("/api/produtos/**").hasAnyRole("FUNCIONARIO", "ADMIN")
+                .requestMatchers("/api/estoque/**").hasAnyRole("FUNCIONARIO", "ADMIN")
+
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint(customAuthenticationEntryPoint)
             );
 
-        JwtAuthenticationFilter filter = jwtAuthenticationFilterProvider.getIfAvailable();
-        if (filter != null) {
-            http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
-        }
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

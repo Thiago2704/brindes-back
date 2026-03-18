@@ -23,39 +23,59 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        criarPerfilPadrao();
-        criarFuncionarioPadrao();
+        criarPerfisPadrao();
+        criarFuncionarioAdmin();
     }
 
-    private void criarPerfilPadrao() {
+    private void criarPerfisPadrao() {
+
         if (!perfilRepository.existsByNome("ROLE_FUNCIONARIO")) {
-            Perfil perfil = Perfil.builder()
+            perfilRepository.save(
+                Perfil.builder()
                     .nome("ROLE_FUNCIONARIO")
-                    .build();
-            perfilRepository.save(perfil);
-            log.info("Perfil padrão 'ROLE_FUNCIONARIO' criado.");
+                    .build()
+            );
+            log.info("Perfil 'ROLE_FUNCIONARIO' criado.");
+        }
+
+        if (!perfilRepository.existsByNome("ROLE_ADMIN")) {
+            perfilRepository.save(
+                Perfil.builder()
+                    .nome("ROLE_ADMIN")
+                    .build()
+            );
+            log.info("Perfil 'ROLE_ADMIN' criado.");
         }
     }
 
-    private void criarFuncionarioPadrao() {
+    private void criarFuncionarioAdmin() {
         String email = "admin@gmail.com";
 
-        if (!funcionarioRepository.existsByEmail(email)) {
-            Perfil perfil = perfilRepository.findByNome("ROLE_FUNCIONARIO")
-                    .orElseThrow(() -> new IllegalStateException("Perfil 'ROLE_FUNCIONARIO' não encontrado."));
+        Funcionario admin = funcionarioRepository.findByEmail(email)
+                .orElse(null);
 
-            Funcionario admin = Funcionario.builder()
+        Perfil perfilFuncionario = perfilRepository.findByNome("ROLE_FUNCIONARIO")
+                .orElseThrow();
+
+        Perfil perfilAdmin = perfilRepository.findByNome("ROLE_ADMIN")
+                .orElseThrow();
+
+        if (admin == null) {
+            admin = Funcionario.builder()
                     .nome("Administrador")
                     .email(email)
                     .senha(passwordEncoder.encode("123456"))
                     .ativo(true)
-                    .perfis(Set.of(perfil))
+                    .perfis(Set.of(perfilFuncionario, perfilAdmin))
                     .build();
 
             funcionarioRepository.save(admin);
-            log.info("Funcionário padrão criado: {}", email);
+            log.info("Admin criado.");
         } else {
-            log.info("Funcionário padrão já existe: {}", email);
+            admin.getPerfis().add(perfilAdmin);
+            funcionarioRepository.save(admin);
+
+            log.info("Admin atualizado com ROLE_ADMIN.");
         }
     }
 }
